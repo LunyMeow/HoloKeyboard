@@ -36,7 +36,7 @@ newPos = {
 
 
 #Tuşa basma algılama ayarları
-sensivity = 2
+pressSensivity = 2
 emptyValue = 22 #el ileri veya geri gittiğinde aradki mesafe değişiyor bu değer 0 ve 17 noktalarının arasındaki mesafeye göre hassasiyeti oranlayacak
 
 
@@ -60,28 +60,37 @@ LowerKeysv2 = [
     ['Esc']
 ]
 
-space_between_kayboards=['6','Y','y','H','h','N','n']
+#space_between_kayboards=['6','Y','y','H','h','N','n']
 
 
 # Klavye ayarları
-special_keys_width = {
-    'Space': 180,  # Space tuşunun genişliği
-    'Backspace': 120,  # Backspace tuşunun genişliği
-    'Shift': 140,  # Shift tuşunun genişliği
-    'Tab': 100  # Tab tuşunun genişliği
-}
+
 key_width = 60  # Standart tuş genişliği
 key_height = 60  # Standart tuş yüksekliği
 keyboard_x = 100
 keyboard_y = 100 # Klavye başlangıç konumu
-shift=False
+special_keys_width = {
+    'Space': key_width*3,  # Space tuşunun genişliği
+    'Backspace': key_width*2,  # Backspace tuşunun genişliği
+    'Shift': key_width*2,  # Shift tuşunun genişliği
+    'Tab': key_width*2  # Tab tuşunun genişliği
+}
+caps=False
 space_between_keys=10
-keyboardCirclePoints=[int((keyboard_x+((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['Backspace']))),int((keyboard_y+((key_height+space_between_keys)*len(UpperKeysv2))))]
-keyboardCirclesDistance=int(math.sqrt((keyboardCirclePoints[0] - keyboard_x) ** 2 + (keyboardCirclePoints[1] - keyboard_y) ** 2 ))
-column=((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['Backspace'])  #sütun 
-maxrow=((key_height+space_between_keys)*len(UpperKeysv2))  #satır
-keyboardCirclesDistancex=keyboardCirclePoints[0]-maxrow
-keyboardCirclesDistancey=keyboardCirclePoints[1]-column
+
+
+
+defaultcolumn = space_between_keys*len(UpperKeysv2[0])
+for i in range(len(UpperKeysv2[0])):
+    defaultcolumn += key_width + 0 if UpperKeysv2[0][i] not in special_keys_width else special_keys_width[UpperKeysv2[0][i]]
+    
+    
+defaultrow = space_between_keys*len(UpperKeysv2)
+defaultrow += key_height*len(UpperKeysv2)
+
+keyboardCirclePoints=[keyboard_x+defaultcolumn,keyboard_y+defaultrow]
+
+
 lastPressedKeys={}
 pressSecond=0.25
 is_fist=False
@@ -92,14 +101,14 @@ is_fist=False
 # pressedkey fonksiyonu
 def pressedkey(finger_name, key):
     def press_key_in_background():
-        global shift
+        global caps
         #print(f"{finger_name} ile tusa basildi : {key}")
         
 
 
         pyautogui.press(key)
-        shift = False if shift and key == 'Caps' else True
-        print(shift)
+        caps = False if caps and key == 'Caps' else True
+        #print(caps)
 
     
 
@@ -115,9 +124,15 @@ def pressedkey(finger_name, key):
 
 def calculate_distance(fingertip, finger_base):
     return math.sqrt((fingertip.x - finger_base.x) ** 2 + (fingertip.y - finger_base.y) ** 2 )*100
+def calculateDistance(posOne,posTwo):
+    return math.sqrt((posOne[0] - posTwo[0]) ** 2 + (posOne[1] - posTwo[1]) ** 2 )
 
-def calculateSensivity(distance):
-    return (distance*sensivity)/emptyValue
+
+def calculateSensivity(distance,sens=pressSensivity): #el uzaklaştıkça aradaki mesafeler kısaldığından dolayı belli bir değerde oranlaman gerekiyor. 0 ve 17 nolu boğumlar arası uzaklığa göre yani elin hemen hemen z eksenine göre hassaslığı yeniden hesaplıyor.
+    #distance = 0 ve 17 numaralı boğumlar arası o anki uzaklık
+    #emptyValue = el hemen hemen 40 50 cm uzaktayken (varsayılan kullanım) 0 ve 17 boğum arası uzaklık
+    #sens = oranlamak istediğin hassasiyet değeri
+    return (distance*sens)/emptyValue
 
 
 
@@ -149,8 +164,7 @@ def put_text_centered(image, text, position, font=cv2.FONT_HERSHEY_COMPLEX, font
 # Klavye tuşlarını çizme fonksiyonu
 def draw_keyboard(image, top_left_x, top_left_y):
     coordinates={}   #{'a':(0,0)}
-    global keyboardCirclesDistance
-    for row_index, row in enumerate(UpperKeysv2 if shift else LowerKeysv2):
+    for row_index, row in enumerate(UpperKeysv2 if caps else LowerKeysv2):
         current_x = top_left_x  # Her satır için x koordinatını sıfırlayın
         for col_index, key in enumerate(row):
             # Özel tuşlar için genişlik kullan, diğer tuşlar için normal genişlik
@@ -193,35 +207,46 @@ def moveKeyboard(topLeft):
     newTopLeft.append(topLeft[1]-(key_height*3+space_between_keys*2))
     keyboard_x=int(newTopLeft[0])
     keyboard_y=int(newTopLeft[1])
-    keyboardCirclePoints[0]=int((keyboard_x+((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['Backspace']) ))
-    keyboardCirclePoints[1]=int((keyboard_y+((key_height+space_between_keys)*len(UpperKeysv2))))
+
+    column = space_between_keys*len(UpperKeysv2[0])
+    for i in range(len(UpperKeysv2[0])):
+        column += key_width + 0 if UpperKeysv2[0][i] not in special_keys_width else special_keys_width[UpperKeysv2[0][i]]
+        
+        
+    row = space_between_keys*len(UpperKeysv2)
+    row += key_height*len(UpperKeysv2)
+    
+    keyboardCirclePoints[0]=int(keyboard_x+column)
+    keyboardCirclePoints[1]=int(keyboard_y+row)
 
 
 
        
 
-def reSizeKeyboard(bottomRight):
-    global key_width,key_height,keyboardCirclePoints,column,maxrow,keyboardCirclesDistancex,keyboardCirclesDistancey
+def reSizeKeyboard(frame,bottomRight):
+    global key_width,key_height,keyboardCirclePoints,defaultcolumn,defaultrow
     
-    #(keyboard_x+((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['Backspace']),keyboard_y+((key_height+space_between_keys)*len(UpperKeysv2)))
-    #orjinal boyut dairesinin konumunu hesaplama denklemi
-    column=((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['Backspace'])  #sütun 
-    maxrow=((key_height+space_between_keys)*len(UpperKeysv2))  #satır
+    cv2.line(frame,(int(keyboard_x),int(keyboard_y)),(int(bottomRight[0]),int(bottomRight[1])),(255,100,100),2)
 
-    distance_between_bottomrightx_keyboard_X=bottomRight[0]-maxrow
-    distance_between_bottomrighty_keyboard_y=bottomRight[1]-column
+    keyboardCirclePoints[0] = bottomRight[0]
+    keyboardCirclePoints[1] = bottomRight[1]
 
-    key_width = int((distance_between_bottomrightx_keyboard_X*40)/keyboardCirclesDistancex)
-    
-    key_height = int((distance_between_bottomrighty_keyboard_y*40)/keyboardCirclesDistancey)
-    if key_height < 1 : key_height = 1
-    if key_width < 1 : key_width = 1
-    if distance_between_bottomrightx_keyboard_X < 1 : distance_between_bottomrightx_keyboard_X = 1
-    if distance_between_bottomrighty_keyboard_y < 1 : distance_between_bottomrighty_keyboard_y = 1
+    column = space_between_keys*len(UpperKeysv2[0])
+    for i in range(len(UpperKeysv2[0])):
+        column += key_width + 0 if UpperKeysv2[0][i] not in special_keys_width else special_keys_width[UpperKeysv2[0][i]]
+        
+        
+    row = space_between_keys*len(UpperKeysv2)
+    row += key_height*len(UpperKeysv2)
+
+    key_width=int((keyboardCirclePoints[0]-keyboard_x)*60/defaultcolumn)
+    key_height=int((keyboardCirclePoints[1]-keyboard_y)*60/defaultrow)
+    print(key_width,key_height)
+
+    #keyboardCirclePoints[0] = keyboard_x + column
+    #keyboardCirclePoints[1] = keyboard_y + row
 
 
-
-    keyboardCirclePoints=bottomRight
 
     
     
@@ -316,7 +341,7 @@ def checkFist(hand_landmarks):
         # Mesafeyi hesapla
         distance = calculate_distance(hand_landmarks.landmark[0], fingertip)
         # Mesafe eşiği
-        if distance > 16:  # Bu değeri ihtiyaca göre ayarlayın
+        if distance > calculateSensivity(calculate_distance(hand_landmarks.landmark[0],hand_landmarks.landmark[17]),sens=31):  # Bu değeri ihtiyaca göre ayarlayın
             is_fist = False
             break
     return is_fist
@@ -364,21 +389,21 @@ while cap.isOpened():
 
             
             
-            if (calculate_distance(hand_landmarks.landmark[4],hand_landmarks.landmark[8])<10):
-                
-                if checkFist(hand_landmarks) :
-                    moveKeyboard((newPos[hand_label][0][0],newPos[hand_label][0][1]))
-                    
-                
-                if math.sqrt((newPos["Right"][8][0]-keyboardCirclePoints[0])**2+(newPos["Right"][8][1]-keyboardCirclePoints[1])**2) < 75:
-                    reSizeKeyboard([newPos["Right"][8][0],newPos["Right"][8][1]])
+            if checkFist(hand_landmarks) :
+                moveKeyboard((newPos[hand_label][0][0],newPos[hand_label][0][1]))
+
+            if (calculateDistance(newPos['Right'][4],newPos['Right'][8])<calculateSensivity(calculateDistance(newPos['Right'][0],newPos['Right'][17]),sens=7)):
+                #print(calculateDistance(newPos['Right'][8],[keyboardCirclePoints[0],keyboardCirclePoints[1]]),calculateSensivity(calculateDistance(newPos['Right'][0],newPos['Right'][17]),sens=7))
+            
+                if calculateDistance(newPos['Right'][8],[keyboardCirclePoints[0],keyboardCirclePoints[1]]) < calculateSensivity(calculateDistance(newPos['Right'][0],newPos['Right'][17]),sens=7):
+                    reSizeKeyboard(frame,[newPos["Right"][8][0],newPos["Right"][8][1]])
             
 
                     
                     
             
             for a in range(0,21,4):
-                if (calculate_distance(hand_landmarks.landmark[a],hand_landmarks.landmark[a-1]) < calculateSensivity(calculate_distance(hand_landmarks.landmark[0],hand_landmarks.landmark[17]))):
+                if (calculate_distance(hand_landmarks.landmark[a],hand_landmarks.landmark[a-1]) < calculateSensivity(calculate_distance(hand_landmarks.landmark[0],hand_landmarks.landmark[17]),sens=pressSensivity)):
                     for i in _coordinates:
                         if (hand_landmarks.landmark[a-2].x*screen_w > _coordinates[i][0] and hand_landmarks.landmark[a-2].x*screen_w < _coordinates[i][0]+key_width) and (hand_landmarks.landmark[a-2].y*screen_h > _coordinates[i][1] and hand_landmarks.landmark[a-2].y*screen_h < _coordinates[i][1]+key_height): 
                             if calculatePress(i) and is_fist == False:
