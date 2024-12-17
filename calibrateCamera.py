@@ -5,7 +5,7 @@ import numpy as np
 chessboard_size = (9, 6)
 
 # Her bir karenin fiziksel boyutu (örneğin, 25 mm)
-square_size = 25  # mm
+square_size = 210  # mm
 
 # Dünya koordinatları (satranç tahtasının gerçek konumu)
 obj_points = []

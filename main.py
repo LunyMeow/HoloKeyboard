@@ -83,8 +83,8 @@ maxrow=((key_height+space_between_keys)*len(UpperKeysv2))  #satır
 keyboardCirclesDistancex=keyboardCirclePoints[0]-maxrow
 keyboardCirclesDistancey=keyboardCirclePoints[1]-column
 lastPressedKeys={}
-pressSecond=0.5
-
+pressSecond=0.25
+is_fist=False
 
 
 
@@ -188,8 +188,11 @@ def calculatePress(key):
 
 def moveKeyboard(topLeft):
     global keyboard_x,keyboard_y,keyboardCirclePoints
-    keyboard_x=int(topLeft[0])
-    keyboard_y=int(topLeft[1])
+    newTopLeft=[]
+    newTopLeft.append(topLeft[0]-(key_width*7+space_between_keys*6))
+    newTopLeft.append(topLeft[1]-(key_height*3+space_between_keys*2))
+    keyboard_x=int(newTopLeft[0])
+    keyboard_y=int(newTopLeft[1])
     keyboardCirclePoints[0]=int((keyboard_x+((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['Backspace']) ))
     keyboardCirclePoints[1]=int((keyboard_y+((key_height+space_between_keys)*len(UpperKeysv2))))
 
@@ -286,15 +289,38 @@ smoother = SmoothHandMovement(window_size=smoothingValue)
 
 
 #Elin noktalarını gelecekte yapacağım geliştirme ile sunuculardan gelen bilgilere göre çizme işlemi
-def calculateFingers(*landmarks,handLabel,handScore):
-
-
-
-
+def calculateFingers(*landmarks,frame,handLabel,handScore):
+    
     for i,a in enumerate(landmarks[0]):
         newPos[handLabel][i]=smoother.add_position((int(a.x*screen_w),int(a.y*screen_h)),i,handLabel)
-        cv2.circle(frame,(int(newPos[handLabel][i][0]),int(newPos[handLabel][i][1])),12,(255,0,0) if handLabel == "Right" else (0,0,255),5)
-            
+        if i %4 == 0 and i != 0:
+            cv2.circle(frame,(int(newPos[handLabel][i-2][0]),int(newPos[handLabel][i-2][1])),12,(255,0,0) if handLabel == "Right" else (0,0,255),5)
+        
+
+    #cv2.circle(frame,(int(newPos[handLabel][a-2][0]),int(newPos[handLabel][a-2][1])),12,(255,0,0) if handLabel == "Right" else (0,0,255),5)
+
+
+def checkFist(hand_landmarks):
+    global is_fist
+    finger_tips = [
+                    mp_hands.HandLandmark.THUMB_TIP,
+                    mp_hands.HandLandmark.INDEX_FINGER_TIP,
+                    mp_hands.HandLandmark.MIDDLE_FINGER_TIP,
+                    mp_hands.HandLandmark.RING_FINGER_TIP,
+                    mp_hands.HandLandmark.PINKY_TIP,
+                ]
+    # Yumruk kontrolü
+    is_fist = True
+    for tip in finger_tips:
+        fingertip = hand_landmarks.landmark[tip]
+        # Mesafeyi hesapla
+        distance = calculate_distance(hand_landmarks.landmark[0], fingertip)
+        # Mesafe eşiği
+        if distance > 16:  # Bu değeri ihtiyaca göre ayarlayın
+            is_fist = False
+            break
+    return is_fist
+
 
 
 while cap.isOpened():
@@ -328,7 +354,7 @@ while cap.isOpened():
             hand_score = handedness.classification[0].score  # Güven skoru
             
             _coordinates=draw_keyboard(frame,keyboard_x,keyboard_y)
-            calculateFingers(hand_landmarks.landmark,handLabel=hand_label,handScore=hand_score)
+            calculateFingers(hand_landmarks.landmark,frame=frame,handLabel=hand_label,handScore=hand_score)
             
 
             cv2.circle(frame,(keyboard_x,keyboard_y),20,(255,255,255),2)
@@ -337,15 +363,17 @@ while cap.isOpened():
             
 
             
-
+            
             if (calculate_distance(hand_landmarks.landmark[4],hand_landmarks.landmark[8])<10):
                 
-                if math.sqrt((newPos[hand_label][8][0]-keyboard_x)**2+(newPos[hand_label][8][1]-keyboard_y)**2) < 100 :
-                    moveKeyboard((newPos[hand_label][8][0],newPos[hand_label][8][1]))
+                if checkFist(hand_landmarks) :
+                    moveKeyboard((newPos[hand_label][0][0],newPos[hand_label][0][1]))
                     
                 
                 if math.sqrt((newPos["Right"][8][0]-keyboardCirclePoints[0])**2+(newPos["Right"][8][1]-keyboardCirclePoints[1])**2) < 75:
                     reSizeKeyboard([newPos["Right"][8][0],newPos["Right"][8][1]])
+            
+
                     
                     
             
@@ -353,7 +381,7 @@ while cap.isOpened():
                 if (calculate_distance(hand_landmarks.landmark[a],hand_landmarks.landmark[a-1]) < calculateSensivity(calculate_distance(hand_landmarks.landmark[0],hand_landmarks.landmark[17]))):
                     for i in _coordinates:
                         if (hand_landmarks.landmark[a-2].x*screen_w > _coordinates[i][0] and hand_landmarks.landmark[a-2].x*screen_w < _coordinates[i][0]+key_width) and (hand_landmarks.landmark[a-2].y*screen_h > _coordinates[i][1] and hand_landmarks.landmark[a-2].y*screen_h < _coordinates[i][1]+key_height): 
-                            if calculatePress(i):
+                            if calculatePress(i) and is_fist == False:
                                 pressedkey(hand_label,i)
                                 #cv2.circle(frame,(_coordinates[i][0],_coordinates[i][1]),13,(0,255,255),-1)
                                 cv2.rectangle(frame,_coordinates[i],(_coordinates[i][0]+key_width,_coordinates[i][1]+key_height),(0,255,255) if hand_label == "Right" else (255,255,0),-1)
