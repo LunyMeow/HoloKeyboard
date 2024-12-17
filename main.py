@@ -14,6 +14,8 @@ screen_w,screen_h=width-300,height-150
 
 #FPS ölçmek için
 calculateFPS=False
+prev_time = time.time()
+
 
 
 # MediaPipe el takip modülü
@@ -34,7 +36,7 @@ newPos = {
 
 
 #Tuşa basma algılama ayarları
-sensivity = 4
+sensivity = 2
 emptyValue = 22 #el ileri veya geri gittiğinde aradki mesafe değişiyor bu değer 0 ve 17 noktalarının arasındaki mesafeye göre hassasiyeti oranlayacak
 
 
@@ -50,10 +52,10 @@ UpperKeysv2 = [
 ]
 
 LowerKeysv2 = [
-    ['`', '1', '2', '3', '4', '5', '6', ' ', '7', '8', '9', '0', '-', '=', 'Backspace'],
-    ['Tab', 'q', 'w', 'e', 'r', 't', 'y', ' ', 'u', 'i', 'o', 'p', '[', ']', '\\'],
-    ['Caps', 'a', 's', 'd', 'f', 'g', 'h', ' ', 'j', 'k', 'l', ';', '\'', 'Enter'],
-    ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', ' ', 'm', ',', '.', '/', 'Shift'],
+    ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
+    ['Tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'],
+    ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', 'Enter'],
+    ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'Shift'],
     ['Ctrl', 'Win', 'Alt', 'Space', 'Alt', 'Fn', 'Ctrl'],
     ['Esc']
 ]
@@ -68,10 +70,10 @@ special_keys_width = {
     'Shift': 140,  # Shift tuşunun genişliği
     'Tab': 100  # Tab tuşunun genişliği
 }
-key_width = 40  # Standart tuş genişliği
-key_height = 40  # Standart tuş yüksekliği
-keyboard_x = 20
-keyboard_y = 20 # Klavye başlangıç konumu
+key_width = 60  # Standart tuş genişliği
+key_height = 60  # Standart tuş yüksekliği
+keyboard_x = 100
+keyboard_y = 100 # Klavye başlangıç konumu
 shift=False
 space_between_keys=10
 keyboardCirclePoints=[int((keyboard_x+((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['Backspace']))),int((keyboard_y+((key_height+space_between_keys)*len(UpperKeysv2))))]
@@ -80,37 +82,35 @@ column=((key_width+space_between_keys)*len(UpperKeysv2[0])+special_keys_width['B
 maxrow=((key_height+space_between_keys)*len(UpperKeysv2))  #satır
 keyboardCirclesDistancex=keyboardCirclePoints[0]-maxrow
 keyboardCirclesDistancey=keyboardCirclePoints[1]-column
+lastPressedKeys={}
+pressSecond=0.5
 
 
 
 
 
 # pressedkey fonksiyonu
-def pressedkey(finger_name, key, temp):
+def pressedkey(finger_name, key):
     def press_key_in_background():
         global shift
-        if temp == 0:
-            print(f"{finger_name} ile tusa basildi : {key}")
-        else:
-            print(f"{finger_name} ile tusa basili : {key}")
-    
+        #print(f"{finger_name} ile tusa basildi : {key}")
+        
+
 
         pyautogui.press(key)
+        shift = False if shift and key == 'Caps' else True
+        print(shift)
 
     
 
 # Eğer Shift tuşu basılmışsa
-        if key == "Shift":
-            if shift:
-                shift = False  # Eğer zaten basılıysa, shift'i bırak
-            else:
-                shift = True   # Eğer basılı değilse, shift'i aktif et
+
 
     # Thread başlatmak
     threading.Thread(target=press_key_in_background).start()
+        
 
     
-prev_time = time.time()
 
 
 def calculate_distance(fingertip, finger_base):
@@ -148,8 +148,9 @@ def put_text_centered(image, text, position, font=cv2.FONT_HERSHEY_COMPLEX, font
 
 # Klavye tuşlarını çizme fonksiyonu
 def draw_keyboard(image, top_left_x, top_left_y):
+    coordinates={}   #{'a':(0,0)}
     global keyboardCirclesDistance
-    for row_index, row in enumerate(UpperKeysv2):
+    for row_index, row in enumerate(UpperKeysv2 if shift else LowerKeysv2):
         current_x = top_left_x  # Her satır için x koordinatını sıfırlayın
         for col_index, key in enumerate(row):
             # Özel tuşlar için genişlik kullan, diğer tuşlar için normal genişlik
@@ -167,9 +168,21 @@ def draw_keyboard(image, top_left_x, top_left_y):
 
             # X koordinatını sonraki tuş için güncelle
             current_x = x + width + space_between_keys
+            coordinates[key]=(x,y)
+
+    return coordinates
 
 
-    
+def calculatePress(key):
+    if key in lastPressedKeys:
+        if time.time()- lastPressedKeys[key] <pressSecond:
+            return False
+        else:
+            lastPressedKeys[key]=time.time()
+            return True
+    else:
+        lastPressedKeys[key]=time.time()
+        return True
 
 
 
@@ -310,17 +323,13 @@ while cap.isOpened():
     if results.multi_hand_landmarks:
         for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
             
-            cv2.circle(frame,(50,50,50),12,(255,0,00),2)
+            #cv2.circle(frame,(50,50,50),12,(255,0,0),2)
             hand_label = handedness.classification[0].label  # "Right" veya "Left"
             hand_score = handedness.classification[0].score  # Güven skoru
             
-            coordinates=draw_keyboard(frame,keyboard_x,keyboard_y)
+            _coordinates=draw_keyboard(frame,keyboard_x,keyboard_y)
             calculateFingers(hand_landmarks.landmark,handLabel=hand_label,handScore=hand_score)
             
-
-            for i in range(4,21,4):
-                if calculate_distance(hand_landmarks.landmark[i],hand_landmarks.landmark[i-1]) < calculateSensivity(calculate_distance(hand_landmarks.landmark[0],hand_landmarks.landmark[17])):
-                    put_text_centered(frame, i, (150 , 50), font_scale=1, color=(255, 255, 255), thickness=2)
 
             cv2.circle(frame,(keyboard_x,keyboard_y),20,(255,255,255),2)
             
@@ -340,8 +349,16 @@ while cap.isOpened():
                     
                     
             
-            
-            
+            for a in range(0,21,4):
+                if (calculate_distance(hand_landmarks.landmark[a],hand_landmarks.landmark[a-1]) < calculateSensivity(calculate_distance(hand_landmarks.landmark[0],hand_landmarks.landmark[17]))):
+                    for i in _coordinates:
+                        if (hand_landmarks.landmark[a-2].x*screen_w > _coordinates[i][0] and hand_landmarks.landmark[a-2].x*screen_w < _coordinates[i][0]+key_width) and (hand_landmarks.landmark[a-2].y*screen_h > _coordinates[i][1] and hand_landmarks.landmark[a-2].y*screen_h < _coordinates[i][1]+key_height): 
+                            if calculatePress(i):
+                                pressedkey(hand_label,i)
+                                #cv2.circle(frame,(_coordinates[i][0],_coordinates[i][1]),13,(0,255,255),-1)
+                                cv2.rectangle(frame,_coordinates[i],(_coordinates[i][0]+key_width,_coordinates[i][1]+key_height),(0,255,255) if hand_label == "Right" else (255,255,0),-1)
+                                print(lastPressedKeys)
+
                 
         
         
