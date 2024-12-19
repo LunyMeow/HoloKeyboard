@@ -28,6 +28,7 @@ cap = cv2.VideoCapture(0)
 
 
 #Titremeyi önlemek için yapılan değişkenler
+#newPos = {'Right':{0:(200,200)}}
 smoothingValue=4
 newPos = {
             'Right': {i: [width/2,height/2] for i in range(21)}, 
@@ -36,7 +37,7 @@ newPos = {
 
 
 #Tuşa basma algılama ayarları
-pressSensivity = 2
+pressSensivity = 2.5
 emptyValue = 22 #el ileri veya geri gittiğinde aradki mesafe değişiyor bu değer 0 ve 17 noktalarının arasındaki mesafeye göre hassasiyeti oranlayacak
 
 
@@ -45,18 +46,18 @@ emptyValue = 22 #el ileri veya geri gittiğinde aradki mesafe değişiyor bu de�
 UpperKeysv2 = [
     ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
     ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
-    ['Caps', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', 'Enter'],
-    ['Shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'Shift'],
-    ['Ctrl', 'Win', 'Alt', 'Space', 'Alt', 'Fn', 'Ctrl'],
+    ['CapsLock', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '\'', 'Enter'],
+    ['LShift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'Shift'],
+    ['CtrlL', 'Fn','Win', 'Alt', 'Space', 'Alt Gr', 'CtrlR'],
     ['Esc']
 ]
 
 LowerKeysv2 = [
     ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
     ['Tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'],
-    ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', 'Enter'],
-    ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'Shift'],
-    ['Ctrl', 'Win', 'Alt', 'Space', 'Alt', 'Fn', 'Ctrl'],
+    ['CapsLock', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', 'Enter'],
+    ['LShift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'Shift'],
+    ['CtrlL', 'Fn','Win', 'Alt', 'Space', 'Alt Gr', 'CtrlR'],
     ['Esc']
 ]
 
@@ -72,12 +73,13 @@ keyboard_y = 100 # Klavye başlangıç konumu
 special_keys_width = {
     'Space': key_width*3,  # Space tuşunun genişliği
     'Backspace': key_width*2,  # Backspace tuşunun genişliği
-    'Shift': key_width*2,  # Shift tuşunun genişliği
-    'Tab': key_width*2  # Tab tuşunun genişliği
+    'Shift': key_width*2,
+    'LShift':int(key_width*1.2),  # Shift tuşunun genişliği
+    'Tab': int(key_width*1.5),
+    'CapsLock':int(key_width*2)  # Tab tuşunun genişliği
 }
 caps=False
 space_between_keys=10
-
 
 
 defaultcolumn = space_between_keys*len(UpperKeysv2[0])
@@ -90,30 +92,56 @@ defaultrow += key_height*len(UpperKeysv2)
 
 keyboardCirclePoints=[keyboard_x+defaultcolumn,keyboard_y+defaultrow]
 
-
 lastPressedKeys={}
 pressSecond=0.25
 is_fist=False
 
+stickyButtons = {'Shift':False,'LShift':False,'CtrlL':False,'CtrlR':False,'Alt':False,'Alt Gr':False,'Fn':False}
 
 
 
-# pressedkey fonksiyonu
+
+import pyautogui
+
+# Global değişkenler
+stickyButtons = {'Shift': False, 'LShift': False, 'CtrlL': False, 'CtrlR': False, 'Alt': False, 'Alt Gr': False, 'Fn': False}
+caps = False
+
 def pressedkey(finger_name, key):
     def press_key_in_background():
-        global caps
-        #print(f"{finger_name} ile tusa basildi : {key}")
+        global caps, stickyButtons
+
+        # CapsLock kontrolü
+        if key == 'CapsLock':
+            if caps:
+                caps=False
+            else:
+                caps=True
+        
+        # Tuşu bastıktan sonra yapılacak işlemler
+        #print(f"{finger_name} ile tuşa basıldı: {key}")
         
 
+        # Sticky tuşlar aktifse, hotkey kullan
+        
+        active_keys = [k for k, v in stickyButtons.items() if v]  # True olan tuşları al
+        if active_keys:
+            pyautogui.hotkey(*active_keys, key)  # * ile unpack ederek hotkey'e gönder
+            print(*active_keys,key)
+        else:
+            # Sticky olmayan tuşlar için normal basma
+            pyautogui.press(key)
 
-        pyautogui.press(key)
-        caps = False if caps and key == 'Caps' else True
-        #print(caps)
+        # Sticky tuş durumunu güncelle
+        if key in stickyButtons:
+            stickyButtons[key] = True
+        elif key not in stickyButtons:
+            # Eğer key stickyButtons içinde değilse, tüm tuşları False yap
+            stickyButtons = {k: False for k in stickyButtons}
+        print(stickyButtons)
+        
 
-    
-
-# Eğer Shift tuşu basılmışsa
-
+    # Arka planda tuşa basma işlemi
 
     # Thread başlatmak
     threading.Thread(target=press_key_in_background).start()
@@ -179,10 +207,15 @@ def draw_keyboard(image, top_left_x, top_left_y):
             # Tuşun ismini yaz
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(image, key, (x + space_between_keys, y + 35), font, 0.7, (255, 255, 255), 2)
+            
 
             # X koordinatını sonraki tuş için güncelle
             current_x = x + width + space_between_keys
             coordinates[key]=(x,y)
+
+            if key in stickyButtons:
+                if stickyButtons[key]:
+                    cv2.rectangle(image,(x,y),(x+width,y+key_height),(0,255,190),12)
 
     return coordinates
 
@@ -241,7 +274,7 @@ def reSizeKeyboard(frame,bottomRight):
 
     key_width=int((keyboardCirclePoints[0]-keyboard_x)*60/defaultcolumn)
     key_height=int((keyboardCirclePoints[1]-keyboard_y)*60/defaultrow)
-    print(key_width,key_height)
+    #print(key_width,key_height)
 
     #keyboardCirclePoints[0] = keyboard_x + column
     #keyboardCirclePoints[1] = keyboard_y + row
@@ -253,19 +286,12 @@ def reSizeKeyboard(frame,bottomRight):
 
 
 
-#Yön tuşlarını çizen fonksiyon
-def draw_buttons(frame,coordinates=(50,50)):
-    cv2.rectangle(frame,(coordinates[0]+key_width,coordinates[1]),(coordinates[0]+key_width*2,coordinates[1]+key_height),(0,255,0),6) #(x1,y1),(x2,y2)
-    cv2.rectangle(frame,(coordinates[0],coordinates[1]+key_height),(coordinates[0]+key_width,coordinates[1]+key_height*2),(0,255,0),6)
-    cv2.rectangle(frame,(coordinates[0]+key_width,coordinates[1]+key_height),(coordinates[0]+key_width*2,coordinates[1]+key_height*2),(0,255,0),6)
-    cv2.rectangle(frame,(coordinates[0]+key_width*2,coordinates[1]+key_height),(coordinates[0]+key_width*3,coordinates[1]+key_height*2),(0,255,0),6)
-    pass
+
     
 
 
 #Ekrana tıklayınca klavyeyi taşıyan kısım
 def on_click(event, x, y, p1,p2):
-    global trainName, record , trainData
     global keyboard_y,keyboard_x
     if event == cv2.EVENT_LBUTTONDOWN:
         #cv2.circle(frame, (x, y), 3, (255, 0, 0), -1)
@@ -369,7 +395,6 @@ while cap.isOpened():
         ortalama_ekle(int(fps))
     
     #draw_keyboard(frame, (keyboard_x,keyboard_y), (keyboard_x+200,keyboard_y+200)) #Klavyeyi çizen fonksiyon
-    #draw_buttons(frame,(50,50)) #Ok tuşlarını çizen fonksiyon
     #put_text_centered(frame, str(record), (50 , 50), font_scale=1, color=(255, 255, 255), thickness=2)
     if results.multi_hand_landmarks:
         for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
@@ -405,12 +430,15 @@ while cap.isOpened():
             for a in range(0,21,4):
                 if (calculate_distance(hand_landmarks.landmark[a],hand_landmarks.landmark[a-1]) < calculateSensivity(calculate_distance(hand_landmarks.landmark[0],hand_landmarks.landmark[17]),sens=pressSensivity)):
                     for i in _coordinates:
-                        if (hand_landmarks.landmark[a-2].x*screen_w > _coordinates[i][0] and hand_landmarks.landmark[a-2].x*screen_w < _coordinates[i][0]+key_width) and (hand_landmarks.landmark[a-2].y*screen_h > _coordinates[i][1] and hand_landmarks.landmark[a-2].y*screen_h < _coordinates[i][1]+key_height): 
+                        if (hand_landmarks.landmark[a-2].x*screen_w > _coordinates[i][0] and hand_landmarks.landmark[a-2].x*screen_w < _coordinates[i][0] + special_keys_width.get(i,key_width)) and (hand_landmarks.landmark[a-2].y*screen_h > _coordinates[i][1] and hand_landmarks.landmark[a-2].y*screen_h < _coordinates[i][1]+key_height): 
                             if calculatePress(i) and is_fist == False:
                                 pressedkey(hand_label,i)
                                 #cv2.circle(frame,(_coordinates[i][0],_coordinates[i][1]),13,(0,255,255),-1)
-                                cv2.rectangle(frame,_coordinates[i],(_coordinates[i][0]+key_width,_coordinates[i][1]+key_height),(0,255,255) if hand_label == "Right" else (255,255,0),-1)
-                                print(lastPressedKeys)
+
+                                cv2.rectangle(frame,_coordinates[i],(_coordinates[i][0] + special_keys_width.get(i,key_width),_coordinates[i][1]+key_height),(0,255,255) if hand_label == "Right" else (255,255,0),-1)
+                                
+                                
+                                #print(lastPressedKeys)
 
                 
         
