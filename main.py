@@ -101,7 +101,6 @@ stickyButtons = {'Shift':False,'LShift':False,'CtrlL':False,'CtrlR':False,'Alt':
 
 
 
-import pyautogui
 
 # Global değişkenler
 stickyButtons = {'Shift': False, 'LShift': False, 'CtrlL': False, 'CtrlR': False, 'Alt': False, 'Alt Gr': False, 'Fn': False}
