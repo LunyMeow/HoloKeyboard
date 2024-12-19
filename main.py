@@ -5,6 +5,7 @@ import time
 import pyautogui
 import threading
 import numpy as np
+from keyboard import is_pressed
 
 
 width,height=pyautogui.size()
@@ -78,7 +79,7 @@ special_keys_width = {
     'Tab': int(key_width*1.5),
     'CapsLock':int(key_width*2)  # Tab tuşunun genişliği
 }
-caps=False
+caps=is_pressed('caps lock')
 space_between_keys=10
 
 
@@ -104,31 +105,28 @@ stickyButtons = {'Shift':False,'LShift':False,'CtrlL':False,'CtrlR':False,'Alt':
 
 # Global değişkenler
 stickyButtons = {'Shift': False, 'LShift': False, 'CtrlL': False, 'CtrlR': False, 'Alt': False, 'Alt Gr': False, 'Fn': False}
-caps = False
-
+active_keys=[]
 def pressedkey(finger_name, key):
     def press_key_in_background():
-        global caps, stickyButtons
+        global  caps,stickyButtons, active_keys
 
         # CapsLock kontrolü
         if key == 'CapsLock':
-            if caps:
-                caps=False
-            else:
-                caps=True
-        
+            caps = False if caps else True
+            
+            
         # Tuşu bastıktan sonra yapılacak işlemler
         #print(f"{finger_name} ile tuşa basıldı: {key}")
         
 
         # Sticky tuşlar aktifse, hotkey kullan
-        
         active_keys = [k for k, v in stickyButtons.items() if v]  # True olan tuşları al
+        
         if active_keys:
             pyautogui.hotkey(*active_keys, key)  # * ile unpack ederek hotkey'e gönder
-            print(*active_keys,key)
         else:
             # Sticky olmayan tuşlar için normal basma
+            
             pyautogui.press(key)
 
         # Sticky tuş durumunu güncelle
@@ -137,7 +135,6 @@ def pressedkey(finger_name, key):
         elif key not in stickyButtons:
             # Eğer key stickyButtons içinde değilse, tüm tuşları False yap
             stickyButtons = {k: False for k in stickyButtons}
-        print(stickyButtons)
         
 
     # Arka planda tuşa basma işlemi
@@ -190,8 +187,10 @@ def put_text_centered(image, text, position, font=cv2.FONT_HERSHEY_COMPLEX, font
 
 # Klavye tuşlarını çizme fonksiyonu
 def draw_keyboard(image, top_left_x, top_left_y):
+    global caps
     coordinates={}   #{'a':(0,0)}
     for row_index, row in enumerate(UpperKeysv2 if caps else LowerKeysv2):
+        
         current_x = top_left_x  # Her satır için x koordinatını sıfırlayın
         for col_index, key in enumerate(row):
             # Özel tuşlar için genişlik kullan, diğer tuşlar için normal genişlik
