@@ -6,11 +6,85 @@ import pyautogui
 import threading
 import numpy as np
 from keyboard import is_pressed
-
+#Sunucu eklemeleri
 
 width,height=pyautogui.size()
 print(width,height)
 screen_w,screen_h=width-300,height-150
+
+
+runOnline = False
+if runOnline:
+    import socket
+    import pickle
+    data = b""
+    onlinePos = {} #{addr:{Right:()}}
+    server_ip = '192.168.1.107'  # Server IP'sini girin
+    server_port = 9999
+
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect((server_ip, server_port))
+    print("Connected")
+
+    def onlineBackgroundPart():
+        global frame
+        frame=np.zeros((screen_w, screen_h, 3), dtype=np.uint8)
+        
+        
+        while True:
+            try:
+                
+                data = b""  # Her döngüde data'yı sıfırla
+                while True:
+                    packet = client.recv(4096)  # 4096 byte al
+                    if not packet:  # Eğer veri gelmiyorsa, bağlantı kesilmiştir
+                        print("Bağlantı kesildi.")
+                        break
+                    data += packet  # Alınan veriyi birleştir
+
+                    # Eğer verinin tamamı gelmediyse, devam et
+                    if len(packet) < 4096:
+                        break
+                    
+                if data:
+                    try:
+
+                        positions = pickle.loads(data)  # Veriyi çöz
+                        
+
+                        
+                        for addr, hands in positions.items():
+                            for hand, points in hands.items():
+                                for i, pos in points.items():
+                                    x, y = int(pos[0] * screen_w), int(pos[1] * screen_h)
+                                    #cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+                                    
+                                    
+
+
+                        # Görselleştirmeyi buradan yapıyoruz
+                        
+                        if cv2.waitKey(10) & 0xFF == ord('q'):  # 10ms bekleme
+                            break
+                        
+                    except pickle.UnpicklingError as e:
+                        print(f"UnpicklingError: {e}")
+                    except EOFError as e:
+                        print(f"EOFError: Veri eksik veya bozuk: {e}")
+                    except Exception as e:
+                        print(f"Beklenmeyen bir hata: {e}")
+                else:
+                    print("Veri alınamadı.")
+                    break
+            except Exception as e:
+                print(f"Genel hata: {e}")
+                break
+
+        client.close()
+        cv2.destroyAllWindows()
+    threading.Thread(target=onlineBackgroundPart).start()
+
+
 
 
 #FPS ölçmek için
@@ -384,6 +458,16 @@ while cap.isOpened():
 
     # El işleme
     results = hands.process(rgb_frame)
+
+
+        
+
+
+
+
+
+
+
 
     if calculateFPS:
         current_time = time.time()
