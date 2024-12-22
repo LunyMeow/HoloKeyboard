@@ -115,9 +115,6 @@ newPos = {
 pressSensivity = 2.5
 emptyValue = 22 #el ileri veya geri gittiğinde aradki mesafe değişiyor bu değer 0 ve 17 noktalarının arasındaki mesafeye göre hassasiyeti oranlayacak
 
-
-
-
 UpperKeysv2 = [
     ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
     ['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
@@ -140,7 +137,6 @@ LowerKeysv2 = [
 
 
 # Klavye ayarları
-
 key_width = 60  # Standart tuş genişliği
 key_height = 60  # Standart tuş yüksekliği
 keyboard_x = 100
@@ -170,11 +166,6 @@ keyboardCirclePoints=[keyboard_x+defaultcolumn,keyboard_y+defaultrow]
 lastPressedKeys={}
 pressSecond=0.25
 is_fist=False
-
-stickyButtons = {'Shift':False,'LShift':False,'CtrlL':False,'CtrlR':False,'Alt':False,'Alt Gr':False,'Fn':False}
-
-
-
 
 
 # Global değişkenler
@@ -377,7 +368,6 @@ cv2.setMouseCallback("Virtual Keyboard", on_click)
 
 
 #elin titremesini önleme
-
 class SmoothHandMovement:
     def __init__(self, window_size=5):
         self.window_size = window_size
@@ -458,13 +448,6 @@ while cap.isOpened():
 
     # El işleme
     results = hands.process(rgb_frame)
-
-
-        
-
-
-
-
 
 
 
