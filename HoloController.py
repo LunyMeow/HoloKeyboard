@@ -11,8 +11,7 @@ from keyboard import is_pressed
 
 width,height=pyautogui.size()
 print(width,height)
-screen_w,screen_h=int(width/2),int(height/2)
-
+screen_w,screen_h=700,700
 
 #FPS ölçmek için
 calculateFPS=False
@@ -121,7 +120,16 @@ def load_json(file_path):
 
 # Çerçeve çizme fonksiyonu
 def draw_frame(image, frame_data):
-    color = tuple(int(frame_data["frameColor"][i:i+2], 16) for i in (1, 3, 5))  # Hex renk kodunu RGB'ye çevir
+# Eğer frameColor zaten bir tuple ise doğrudan kullan
+    if isinstance(frame_data["frameColor"], tuple):
+        color = frame_data["frameColor"]
+    else:
+        # Eğer string ise tuple'a dönüştür
+        color_str = frame_data["frameColor"]
+        color = tuple(map(int, color_str.strip("()").split(",")))
+
+
+
     top_left_x = int(frame_data["topLeft"]["x"] * image.shape[1])
     top_left_y = int(frame_data["topLeft"]["y"] * image.shape[0])
     down_right_x = int(frame_data["downRight"]["x"] * image.shape[1])

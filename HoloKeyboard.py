@@ -170,6 +170,16 @@ is_fist=False
 
 # Global değişkenler
 stickyButtons = {'Shift': False, 'LShift': False, 'CtrlL': False, 'CtrlR': False, 'Alt': False, 'Alt Gr': False, 'Fn': False}
+key_mapping = {
+    'Shift': 'shift',
+    'LShift': 'shiftleft',
+    'CtrlL': 'ctrlleft',
+    'CtrlR': 'ctrlright',
+    'Alt': 'altleft',
+    'Alt Gr': 'altright',
+    'Fn': 'fn'
+}
+print(pyautogui.KEY_NAMES)
 active_keys=[]
 def pressedkey(finger_name, key):
     def press_key_in_background():
@@ -186,9 +196,12 @@ def pressedkey(finger_name, key):
 
         # Sticky tuşlar aktifse, hotkey kullan
         active_keys = [k for k, v in stickyButtons.items() if v]  # True olan tuşları al
+        pyKeys = {key_mapping[k]: True for k in active_keys if k in key_mapping}
+
         
         if active_keys:
-            pyautogui.hotkey(*active_keys, key)  # * ile unpack ederek hotkey'e gönder
+            pyautogui.hotkey(*pyKeys, key)  # * ile unpack ederek hotkey'e gönder
+            print("pressed:",pyKeys,key)
         else:
             # Sticky olmayan tuşlar için normal basma
             
