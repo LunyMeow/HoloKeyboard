@@ -67,7 +67,7 @@ def on_click(event, x, y, p1,p2):
         #cv2.circle(frame, (x, y), 3, (255, 0, 0), -1)
         print(x,y)
 
-cv2.namedWindow("Holo Controller")
+cv2.namedWindow("Holo Controller") #
 cv2.setMouseCallback("Holo Controller", on_click)
 
 

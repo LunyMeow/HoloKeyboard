@@ -19,7 +19,7 @@ if runOnline:
     import pickle
     data = b""
     onlinePos = {} #{addr:{Right:()}}
-    server_ip = '192.168.1.107'  # Server IP'sini girin
+    server_ip = '192.168.1.103'  # Server IP'sini girin
     server_port = 9999
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -375,7 +375,7 @@ def on_click(event, x, y, p1,p2):
         
             
             
-cv2.namedWindow("Virtual Keyboard")
+cv2.namedWindow("Virtual Keyboard") 
 cv2.setMouseCallback("Virtual Keyboard", on_click)
 
 
