@@ -1,7 +1,7 @@
 
 
 
-# 🧠 HoloKeyboard
+# HoloKeyboard
 
 **HoloKeyboard**, el hareketlerini kullanarak sanal (holografik) bir klavyeyle yazı yazmanıza olanak tanıyan bir uygulamadır. Kamera aracılığıyla ellerinizi algılar ve parmak hareketlerinizi bir tuşa basma eylemi olarak yorumlar.
 
