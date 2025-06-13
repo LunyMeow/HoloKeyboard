@@ -1,6 +1,6 @@
 
 
-````markdown
+
 # 🧠 HoloKeyboard
 
 **HoloKeyboard**, el hareketlerini kullanarak sanal (holografik) bir klavyeyle yazı yazmanıza olanak tanıyan bir uygulamadır. Kamera aracılığıyla ellerinizi algılar ve parmak hareketlerinizi bir tuşa basma eylemi olarak yorumlar.
@@ -19,7 +19,7 @@
 
    ```bash
    pip install -r requirements.txt
-````
+
 
 2. Uygulamayı başlatmak için:
 
@@ -33,7 +33,7 @@
 
   ```python
   runOnline = True
-  ipAddresses = ["192.168.1.2", "192.168.1.3"]  # Örnek IP adresleri
+  ipAddresses = "192.168.1.102" # Örnek IP adresleri
   ```
 
 > **Not:** Çoklu kamera modu halen geliştirme aşamasındadır.
